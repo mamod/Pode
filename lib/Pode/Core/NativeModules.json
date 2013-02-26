@@ -1,0 +1,17 @@
+{
+    "buffer" : "Core/Buffer.js",
+    "util" : "Core/util.js",
+    "events" : "Core/events.js",
+    "console" : "Core/console.js",
+    "assert" : "Core/assert.js",
+    "chai" : "Core/chai.js",
+    "cluster" : "Core/cluster.js",
+    "fs" : "Core/fs.js",
+    "base64" : "Core/base64.js",
+    "Utils" : "Core/utils.js",
+    "http": "Core/http.js",
+    "child_process" : "Core/child_process.js",
+    "stream" : "Core/Stream/index.js",
+    "_stream_readable" : "Core/Stream/_stream_readable.js",
+    "_stream_writable" : "Core/Stream/_stream_readable.js"
+}

@@ -1,0 +1,13 @@
+=head1 NAME
+
+Pode - Nodejs in pure perl
+
+=head1 DESCRIPTION
+
+Learning Nodejs API by implementing a complete port to Perl using
+Spidermonkey Shell
+
+=head1 WARNING
+
+This still under development so please don't use
+
