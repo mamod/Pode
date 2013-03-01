@@ -11,7 +11,6 @@
     "Utils" : "Core/utils.js",
     "http": "Core/http.js",
     "child_process" : "Core/child_process.js",
-    "stream" : "Core/Stream/index.js",
-    "_stream_readable" : "Core/Stream/_stream_readable.js",
-    "_stream_writable" : "Core/Stream/_stream_readable.js"
+    "stream" : "Core/Stream.js",
+    "path" : "Core/path.js"
 }

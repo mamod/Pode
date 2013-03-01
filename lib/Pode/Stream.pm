@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use Pode::Module;
 use Data::Dumper;
-use Pode::IO::Select;
 use IO::Handle;
 my @FH;
 
@@ -13,14 +12,14 @@ use constant stdout => fileno(STDOUT);
 
 sub ini {
     return {
-        exports => ['readableStream','writableStram','resume','pause','write','_read','can_read','can_write']
+        exports => ['readableStream','writableStream','resume','pause','write','_read','can_read','can_write','check_state']
     }
 }
 
 sub new {
     my $options = shift;
     my $self = bless({
-    select => Pode::IO::Select->new()
+        io => IO::Handle->new()
     },__PACKAGE__);    
     return $self;
 }
@@ -34,13 +33,12 @@ sub readableStream {
     #there is no filehandle associated,
     #open a new anonymous file with read permission
     if (!$fno){
-        
+        return 1;
     }
     
     my $fh = IO::Handle->new();
     $fh->fdopen($fno,"r");
-    $self->{Handles}->{$fno} = $fh;
-    
+    $self->{Handles}->{Readable}->{$fno} = $fh;
     return 1;
 }
 
@@ -58,37 +56,48 @@ sub writableStream {
     
     my $fh = IO::Handle->new();
     $fh->fdopen($fno,"w");
-    $self->{Handles}->{$fno} = $fh;
+    $fh->autoflush(1);
+    $self->{Handles}->{Writable}->{$fno} = $fh;
     return 1;
+}
+
+
+sub _read2 {
+    my $self = shift;
+    my $args = shift;
+    my $fd = $args->{fd};
+    my $bufSize = $args->{buffSize};
+    my $fh = $self->{Handles}->{Readable}->{$fd};
+    my $pos = tell($fh);
+    seek($fh, $pos, 0);
+    read($fh,my $data,$bufSize);
+    return $data;
 }
 
 
 sub _read {
     my $self = shift;
     my $args = shift;
-    
     my $fd = $args->{fd};
     my $bufSize = $args->{buffSize};
-    my $fh = $self->{Handles}->{$fd};
+    my $fh = pode()->Model('IO')->{Readable}->{$fd} || $self->{Handles}->{Readable}->{$fd};
     my $pos = tell($fh);
-    seek($fh, $pos, 0);
-    read($fh,my $data,$bufSize);
-    #print Dumper tell($fh);
-    #$fh->sysread(my $data,$bufSize);
+    seek($fh, 0, 1);
+    sysread($fh,my $data,$bufSize);
     return $data;
 }
 
-my $count = 0;
+
+
+
 sub write {
     my $self = shift;
-    my $fd = shift;
-    #my $fh = $self->{Handles}->{$fd};
-    my $fh = IO::Handle->new();
-    $fh->fdopen($fd,"w");
-    
-    $fh->print("HELLOOOOO $count\n");
-    $count++;
-    return 1;
+    my $args = shift;
+    my $fd = $args->{fd};
+    my $data = $args->{data};
+    my $fh = $self->{Handles}->{Writable}->{$fd};
+    $fh->print("$data") or return $!;
+    return $data;
 }
 
 my $time = time();
@@ -114,23 +123,22 @@ sub can_read {
             next;
         }
         
-        my $fh = $self->{Handles}->{$fd};
+        my $fh = $self->{Handles}->{Readable}->{$fd};
         next if !$fh;
         my $pos = tell($fh);
         my $c = (stat($fh))[7];
         
         if ($pos == -1){
             #error emitter
-            #die;
+            die $!;
         }
         
         if ($c < $pos) {
+            ##reset position at end of file
             seek $fh,0,2;
-            #$pos = tell($fh);
-            #$c = (stat($fh))[7];
         }
         
-        if ( $c >  $pos ){
+        if ( $c >  $pos){
             push @$ret,{
                 fd => $fd,
                 call => 'emitReadable',
@@ -144,8 +152,25 @@ sub can_read {
     return $ret;
 }
 
+sub check_state {
+    my $self = shift;
+    my $fd = shift;
+    my $fh = $self->{io};
+    $fh->fdopen($fd,"r");
+    
+    my $pos = tell($fh);
+    my $state = (stat($fh))[7];
+    
+    return {
+        pos => $pos,
+        state => $state
+    };
+}
 
-sub select { shift->{select} }
+
+sub DESTROY {
+    print Dumper 'HII';
+}
 
 
 1;

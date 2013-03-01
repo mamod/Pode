@@ -10,35 +10,14 @@ use Pode::Utils;
 use Data::Dumper;
 use IO::Handle;
 use Pode::Module;
+use Pode::IO::Select;
 use constant 'WORKERS' => 4;
 my @PROCESSES = ();
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
-use Socket;
 
-$SIG{PIPE} = sub { die "whoops, pipe broke" };
-
-my $CACHEDOBJ;
-
-#BEGIN {
-#   $SIG{INT} = \&trapper;
-#}
-#my $TEST;
-#
-#
-#sub trapper {
-#    print @_,"vvvvvvv\n";
-#    select(undef,undef,undef,.02);
-#    $TEST = 88;
-#    for (@PROCESSES){
-#        kill 'INT',$_;
-#    }
-#    exit(0);
-#    # $$ is the pid of the current process
-#}
 #===============================================================================
 # Global Methods
 #===============================================================================
-my $tickcounter = 0;
 my $METHODS = {
     pid => sub {
         return $$;
@@ -62,9 +41,14 @@ my $METHODS = {
     resume => \&resume,
     pause => \&pause,
     io => \&io,
+    io2 => \&io2,
     getObject => \&getObject
 };
 
+#===============================================================================
+# Registered Models
+#===============================================================================
+my $MODELS = {};
 
 sub new {
     my $class = shift;
@@ -194,40 +178,13 @@ sub run {
 }
 
 
-sub resume {
-    my $self = shift;
-    my $args = shift;
-    my $obj = shift;
-    
-    #$self->{TO_JSHELL}->print('process.evalObj({"id" : ' . $obj->{id} . ', "sync" : true });'."\n");
-    
-    if (my $pid = fork()){
-        return 1;
-    } else {
-        my $fh = IO::Handle->new();
-        $fh->fdopen(9, "r");
-        while(1){
-            sysread($fh,my $data,3);
-            #my $data = <$fh>;
-            if (!$data){
-                next;
-            }
-            $data =~ s/[\r\n]$//g;
-            $self->{TO_JSHELL}->print("process.test('data','$data');\n");
-        }
-        
-        exit();
-    }
-}
-
-
 sub io {
     my $self = shift;
     my $args = shift;
     my $obj = shift;
     
-    open(DATA, '<', "filexxxxxxx.txt");# or die $!;
-    #open(DATA, '<', undef);# or die $!;
+    open(DATA, '<', "filexxxxxxx2.txt");# or die $!;
+    #open(DATA, '>', undef);# or die $!;
     #DATA->autoflush(1);
     return fileno(DATA);
     
@@ -238,22 +195,13 @@ sub io2 {
     my $args = shift;
     my $obj = shift;
     #print Dumper fileno(STDIN);
-    open my $oldin,  '<&=', \*STDIN  or return ();
-    print Dumper fileno($oldin);
-    return fileno($oldin);
-    #open(DATA, '<', "filexxxxxxx.txt");# or die $!;
-    open(DATA, '<', undef);# or die $!;
+    #open my $oldin,  '<&=', \*STDIN  or return ();
+    #print Dumper fileno($oldin);
+    #return fileno($oldin);
+    open(DATA2, '<', "filexxxxxxx.txt");# or die $!;
+    #open(DATA, '<', undef);# or die $!;
     #DATA->autoflush(1);
-    return fileno(DATA);
-    
-}
-
-sub getObject {
-    
-    my $self = shift;
-    
-    my $st = $self->{TO_JSHELL}->print("process.getObject('');\n");
-    print Dumper $st;
+    return fileno(DATA2);
     
 }
 
@@ -273,18 +221,6 @@ sub tock {
     }
 }
 
-sub pause {
-    my $self = shift;
-    close $self->{tt};
-    return 1;
-}
-
-sub test {
-    my $self = shift;
-        #$self->{WATCHER} = \*STDIN;
-        sleep 1;
-        return 'hi';
-}
 
 
 #===============================================================================
@@ -301,26 +237,19 @@ sub processData {
     my $ret;
     my $callMethod;
     
-    if (my $pid = delete $hash->{cluster}){
-        $obj = $self->toJson($hash);
-        $self->{CLUSTER}->{$pid}->print($obj."\n") or die $!;
-    } else {
     
     if (my $method = $hash->{method}){
-        
-        my $methods = $METHODS;
         if (my $class = $hash->{class}){
-            unless ($methods = $methods->{$class}){
+            my $new = $MODELS->{$class};
+            unless ($new){
                 die "you didn't load $class";
             }
-        }
-        
-        if (my $sub = $methods->{$method}){
-            $callMethod = sub { $self->$sub(shift,shift) };
-        } elsif (my $new = $methods->{new}){
+            
             $callMethod = sub { $new->$method(shift,shift) };
-        }else {
-            die "can't locate base method $method";
+        } elsif (my $sub = $METHODS->{$method}) {
+            $callMethod = sub { $self->$sub(shift,shift) };
+        } else {
+            die "can't locate method $method";
         }
         
         $ret = $callMethod->($hash->{args},$hash);
@@ -361,50 +290,11 @@ sub processData {
     
     my $string = $self->toJson($ret);
     return $string;
-    
-    }
 }
 
 #===============================================================================
 # Sending to JS shell
 #===============================================================================
-sub send {
-    my $self = shift;
-    my $ret = shift;
-    if (ref $ret eq 'HASH'){
-        $ret->{pid} = $$;
-        $ret = $self->json->objToJson($ret);
-    }
-    
-    $self->{WRITER}->print($ret."\n");
-}
-
-sub end {
-    my $self = shift;
-    my $obj = shift;
-    
-    if ($self->{event}){
-        $self->{WRITER}->write($obj."[PODE_QUEUE]");
-    } else {
-        $self->{WRITER}->write($obj."\n");
-    }
-}
-
-
-sub queue {
-    my $self = shift;
-    my $data = shift;
-    my $obj = shift;
-    
-    if ($obj && ref $obj eq 'HASH'){
-        $obj->{args} = $data;
-        $data = $self->json->objToJson($obj);
-    }
-    
-    $self->{WRITER}->write($data."[PODE_QUEUE]");
-}
-
-
 sub prefork {
     my $self = shift;
     my $args = shift;
@@ -420,9 +310,111 @@ sub prefork {
     return 1;
 }
 
+#===============================================================================
+# loading modules
+#===============================================================================
+sub _loadModule {
+    my $self = shift;
+    my $args = shift;
+    my $obj = shift;
+    my $module = $args->{class};
+    
+    my $package;
+    local $@;
+    if ($module =~ m/^((.:)?[\/|\/\/|\\|\\\\])/){
+        #$module = File::Spec->canonpath($module);
+        eval "require '$module';";
+        $package = Pode::Module::_package($module);
+        
+        if (!$package){
+            croak "Please use Pode::Module To Register $module as Pode Module";
+        }
+        
+    } else {
+        $module =~ s/\//::/g;
+        $module = __PACKAGE__.'::'.$module;
+        $package = $module;
+        eval "use $module";
+    }
+    
+    my $ret;
+    
+    if ($@){
+        die $@;
+    } else {
+        {
+            no strict 'refs';
+            if ($MODELS->{$package}){
+                $ret = {
+                    class => $package,
+                    uri => $self->{LoadedModels}->{$package}
+                };
+            } else {
+                my $pode = $package.'::pode';
+                *$pode = sub {
+                    return $self;
+                };
+                
+                if ($package->can('ini')){
+                    my $iniMethod = $package.'::ini'; 
+                    $ret = &$iniMethod($args->{options});
+                }
+                
+                my $blessed;
+                if ($package->can('new')){
+                    my $newMethod = $package.'::new';
+                    $blessed = &$newMethod($args->{options} || {});
+                } else {
+                    $blessed = bless({},$package);
+                }
+                
+                $MODELS->{$package} = $blessed;
+                
+                $self->{LoadedModels}->{$package} = $module;
+                $ret->{class} ||= $package;
+            }
+        }
+    }
+    
+    return $ret;
+}
 
 
+sub Model {
+    my $self = shift;
+    my $module_name = shift;
+    if (!$module_name){
+        return $MODELS;
+    }
+    my $module = 'Pode::'.$module_name;
+    return $MODELS->{$module};
+}
 
+#===============================================================================
+# script to start the shell, loading some required system js files
+#===============================================================================
+sub _ini_script {
+    my $self = shift;
+    my $file = shift;
+    my $path = $self->{_path} || '';
+    my $basePATH = $self->{basePATH} || '';
+    
+    $file ||= "$path/Core/repl.js";
+    
+    my @script = (
+        '"',
+        "var _podePATH = '$path'",
+        "var _appPATH = '$basePATH'",
+        "var _scriptToRun = '$file'",
+        "load('$path/Core/require.js','$path/Core/pode.js','$file')",
+        #"process.runner()",
+        "process._ticks()",
+        "process.exit()",
+        '"'
+    );
+    my $javascript = join ";",@script;
+    return $javascript;
+}
 
 
 #===============================================================================
@@ -472,104 +464,6 @@ sub _destroy {
 }
 
 
-
-
-
-
-
-
-
-
-#===============================================================================
-# loading modules
-#===============================================================================
-sub _loadModule {
-    my $self = shift;
-    my $args = shift;
-    my $obj = shift;
-    my $module = $args->{class};
-    
-    my $package;
-    local $@;
-    if ($module =~ m/^((.:)?[\/|\/\/|\\|\\\\])/){
-        #$module = File::Spec->canonpath($module);
-        eval "require '$module';";
-        $package = Pode::Module::_package($module);
-        
-        if (!$package){
-            croak "Please use Pode::Module To Register $module as Pode Module";
-        }
-        
-    } else {
-        $module =~ s/\//::/g;
-        $module = __PACKAGE__.'::'.$module;
-        $package = $module;
-        eval "use $module";
-    }
-    
-    my $ret;
-    
-    if ($@){
-        die $@;
-    } else {
-        {
-            no strict 'refs';
-            if ($METHODS->{$package}){
-                $ret = {
-                    class => $package,
-                    uri => $METHODS->{$package}->{_uri}
-                };
-            } else {
-                my $pode = $package.'::pode';
-                *$pode = sub {
-                    return $self;
-                };
-                
-                if ($package->can('ini')){
-                    my $iniMethod = $package.'::ini'; 
-                    $ret = &$iniMethod($args->{options});
-                }
-                
-                if ($package->can('new')){
-                    my $newMethod = $package.'::new';
-                    my $blessed = &$newMethod($args->{options} || {});
-                    $METHODS->{$package}->{new} = $blessed;
-                }
-                
-                $METHODS->{$package}->{_uri} = $module;
-                $ret->{class} ||= $package;
-            }
-        }
-    }
-    
-    return $ret;
-}
-
-#===============================================================================
-# script to start the shell, loading some required system js files
-#===============================================================================
-sub _ini_script {
-    my $self = shift;
-    my $file = shift;
-    my $path = $self->{_path} || '';
-    my $basePATH = $self->{basePATH} || '';
-    
-    $file ||= "$path/Core/repl.js";
-    
-    my @script = (
-        '"',
-        "var _podePATH = '$path'",
-        "var _appPATH = '$basePATH'",
-        "var _scriptToRun = '$file'",
-        "load('$path/Core/require.js','$path/Core/pode.js','$file')",
-        #"process.runner()",
-        "process._ticks()",
-        "process.exit()",
-        '"'
-    );
-    my $javascript = join ";",@script;
-    return $javascript;
-}
 
 
 1;
