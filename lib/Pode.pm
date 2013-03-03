@@ -27,7 +27,6 @@ my $METHODS = {
         env => \%ENV,
         os => $^O
     }},
-    emit => \&emit,
     fork => \&forker,
     tock => \&tock,
     tick => \&tick,
@@ -36,12 +35,6 @@ my $METHODS = {
     sleep => \&_sleep,
     load => \&_loadModule,
     destroy => \&_destroy,
-    Modules => {},
-    test => \&test,
-    resume => \&resume,
-    pause => \&pause,
-    io => \&io,
-    io2 => \&io2,
     getObject => \&getObject
 };
 
@@ -137,7 +130,7 @@ sub run {
     
     if (my $pid = fork) {
         close $self->{FROM_PERL}; close $self->{TO_PERL};
-        
+        push @PROCESSES,$pid;
         close STDIN;
         open STDIN, '<&', $oldin;
         
@@ -162,7 +155,6 @@ sub run {
             }
         }
         
-        print "EXIT $$\n";
         
         close $self->{FROM_JSHELL}; close $self->{TO_JSHELL};
         waitpid(-1,WNOHANG);
@@ -175,33 +167,10 @@ sub run {
         close $self->{FROM_PERL}; close $self->{TO_PERL};
         exit;
     }
-}
-
-
-sub io {
-    my $self = shift;
-    my $args = shift;
-    my $obj = shift;
     
-    open(DATA, '<', "filexxxxxxx2.txt");# or die $!;
-    #open(DATA, '>', undef);# or die $!;
-    #DATA->autoflush(1);
-    return fileno(DATA);
+    print "EXIT $$\n";
+    $self->_destroy($$);
     
-}
-
-sub io2 {
-    my $self = shift;
-    my $args = shift;
-    my $obj = shift;
-    #print Dumper fileno(STDIN);
-    #open my $oldin,  '<&=', \*STDIN  or return ();
-    #print Dumper fileno($oldin);
-    #return fileno($oldin);
-    open(DATA2, '<', "filexxxxxxx.txt");# or die $!;
-    #open(DATA, '<', undef);# or die $!;
-    #DATA->autoflush(1);
-    return fileno(DATA2);
     
 }
 
@@ -237,15 +206,15 @@ sub processData {
     my $ret;
     my $callMethod;
     
-    
     if (my $method = $hash->{method}){
         if (my $class = $hash->{class}){
-            my $new = $MODELS->{$class};
-            unless ($new){
+            
+            if (my $new = $MODELS->{$class}){
+                $callMethod = sub { $new->$method(shift,shift) };
+            } else {
                 die "you didn't load $class";
             }
             
-            $callMethod = sub { $new->$method(shift,shift) };
         } elsif (my $sub = $METHODS->{$method}) {
             $callMethod = sub { $self->$sub(shift,shift) };
         } else {
@@ -254,15 +223,14 @@ sub processData {
         
         $ret = $callMethod->($hash->{args},$hash);
         if ($ret || ($ret && $ret == 0)) {
+            
             if (!ref $ret){
-                
                 my $args = $ret;
                 $ret = $hash;
                 $ret->{pid} = $$;
                 $ret->{args} = $args;
             } elsif (ref $ret eq 'HASH'){
-                
-                if ($ret->{args}){
+                if ($ret->{args} || $ret->{throwERROR}){
                     $ret->{id} = $hash->{id};
                     $ret->{pid} = $$;
                 } else {
@@ -275,11 +243,11 @@ sub processData {
                 }
             } elsif (ref $ret eq 'ARRAY'){
                 $ret = {
-                        args => $ret,
-                        id => $hash->{id},
-                        sync => $hash->{sync},
-                        pid => $$
-                    }
+                    args => $ret,
+                    id => $hash->{id},
+                    sync => $hash->{sync},
+                    pid => $$
+                }
             }
             
         } else {
@@ -295,6 +263,18 @@ sub processData {
 #===============================================================================
 # Sending to JS shell
 #===============================================================================
+sub throw {
+    
+    my $self = shift;
+    my $error = shift;
+    
+    return {
+        throwERROR => $error
+    };
+    
+}
+
+
 sub prefork {
     my $self = shift;
     my $args = shift;
@@ -409,7 +389,6 @@ sub _ini_script {
         "load('$path/Core/require.js','$path/Core/pode.js','$file')",
         #"process.runner()",
         "process._ticks()",
-        "process.exit()",
         '"'
     );
     my $javascript = join ";",@script;
@@ -448,16 +427,18 @@ sub DESTROY {
 sub _destroy {
     my $self = shift;
     my $args = shift;
+    #close $self->{TO_JSHELL};
+    print Dumper \@PROCESSES;
     
-    $self->send(-1);
     
-    if ($args > 0){
-        #for (@PROCESSES){
-        #    kill -9,$_;
-        #}
-    } else {
-        kill -9,$args;
-    }
+    #if (my $pid = fork()){
+    #    
+    #    sleep 1;
+    kill -9,$args;
+    #} else {
+    #    return 1;
+    #}
+    
     
     return $$;
     
