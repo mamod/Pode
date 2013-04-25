@@ -7,7 +7,5 @@ Pode - Nodejs in pure perl
 Learning Nodejs API by implementing a complete port to Perl using
 Spidermonkey Shell
 
-=head1 WARNING
 
-This still under development so please don't use
 
