@@ -1,0 +1,10 @@
+language: perl
+perl:
+  - "5.16"
+
+before_install:
+  - git git://github.com/mamod/JavaScript-Shell.git update --init --recursive
+
+after_script:
+  - "pode ./tests/all.js"
+
