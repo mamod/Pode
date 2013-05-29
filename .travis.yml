@@ -5,7 +5,9 @@ perl:
 before_install:
   - git clone --branch=master --depth=100 --quiet git://github.com/mamod/JavaScript-Shell.git j_shell
   - cd j_shell
-  - cpanm --quiet --installdeps --notest
+  - "cpanm -n JSON::Any"
+  - perl Makefile.PL
+  - make && make install
   - cd ..
   
 
