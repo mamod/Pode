@@ -7,4 +7,3 @@ before_install:
 
 after_script:
   - "pode ./tests/all.js"
-
