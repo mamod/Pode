@@ -3,7 +3,9 @@ perl:
   - "5.16"
 
 before_install:
-  - git://github.com/someuser/somelibrary.git
+  - git clone --branch=master --depth=100 --quiet git://github.com/mamod/JavaScript-Shell.git mamod/j_shell
+  - cd mamod/j_shell
+  - perl Makefile.PL && make install
 
 after_script:
   - "pode ./tests/all.js"
