@@ -7,7 +7,7 @@
 
 use Test::More tests => 1;
 
-BEGIN { use_ok('HTTP::UA::Parser') };
+BEGIN { use_ok('Pode') };
 
 
 
