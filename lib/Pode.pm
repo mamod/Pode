@@ -85,11 +85,12 @@ sub NeedTickCallback {}
 #==============================================================================
 sub error {
     my $js = shift;
-    $js->destroy();
+    $js->call('quit',1);
     my $error = shift->[0];
-    die $error->{message} . ' at ' . $error->{file} . ' line ' . $error->{line};
+    print STDERR $error->{message} . ' at '
+    . $error->{file} . ' line ' . $error->{line} . "\n";
+    exit(1);
 }
-
 
 #==============================================================================
 # Bindings Load

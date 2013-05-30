@@ -4,7 +4,7 @@ use warnings;
 use Pode;
 
 my $pode = Pode->new();
-$pode->run(\@ARGV);
+$pode->run(['./all.js']);
 
 
 1;

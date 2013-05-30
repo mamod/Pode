@@ -17,4 +17,4 @@ install:
   
 script:
   - cd tests
-  - "perl pode.pl all.js"
+  - "perl runTests.pl"
