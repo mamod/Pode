@@ -10,6 +10,10 @@ before_install:
   - make && make install
   - cd ..
   
+script:
+  - perl Makefile.PL
+  - make && make test
+  - make install
 
 after_script:
   - cd tests
