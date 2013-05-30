@@ -57,6 +57,7 @@ sub run {
     $js->Set('process._tickInfoBox' => [0,0,0]);
     $js->Set('process._needTickCallback' => \&NeedTickCallback);
     $js->Set('process._nativedir' => $nativeDir . $sep);
+    $js->Set('process.die' => \&error);
     
     $js->onError(sub{
         my $s = shift;
@@ -77,11 +78,22 @@ sub run {
     return $self;
 }
 
-#==============================================================================
-# process bindings
-#==============================================================================
-sub NeedTickCallback {}
 
+sub NeedTickCallback {}
+#==============================================================================
+# error handler
+#==============================================================================
+sub error {
+    my $js = shift;
+    $js->destroy();
+    my $error = shift->[0];
+    die $error->{message} . ' at ' . $error->{file} . ' line ' . $error->{line};
+}
+
+
+#==============================================================================
+# Bindings Load
+#==============================================================================
 my $LOAD = {};
 sub exports {
     my $module = caller(0);
@@ -159,6 +171,10 @@ sub binding {
     return $exports;
 }
 
+
+#==============================================================================
+# sleep
+#==============================================================================
 sub _sleep {
     my $j = shift;
     my $args = shift;
