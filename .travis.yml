@@ -12,5 +12,5 @@ before_install:
   
 
 after_script:
-  - cd blib/script
-  - "pode ./tests/all.js"
+  - cd tests
+  - "perl pode.pl all.js"
