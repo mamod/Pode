@@ -7,9 +7,10 @@ before_install:
   - cd j_shell
   - "cpanm -n JSON::Any"
   - perl Makefile.PL
-  - make && make install
+  #- make && make install
   - cd ..
   
 
 after_script:
+  - cd blib/script
   - "pode ./tests/all.js"
