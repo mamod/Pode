@@ -101,7 +101,11 @@ sub exports {
     if ($LOAD->{module}){
         push @{$LOAD->{exports}},@_;
     } else {
+<<<<<<< HEAD
         $LOAD->{module} = caller(0);
+=======
+        $LOAD->{module} = $module;
+>>>>>>> readme
         $LOAD->{exports} = \@_;
     }
 }
@@ -132,7 +136,11 @@ sub binding {
         
         ##normalize module name
         $module =~ s/-/_/g;
+<<<<<<< HEAD
         
+=======
+        $module =~ s/\W+//g;
+>>>>>>> readme
         my $pkg = qq!
             package $module;
             use base '$base';
@@ -172,7 +180,10 @@ sub binding {
     return $exports;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> readme
 #==============================================================================
 # sleep
 #==============================================================================
@@ -185,7 +196,10 @@ sub _sleep {
     return 1;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> readme
 1
 
 __END__
@@ -196,5 +210,136 @@ Pode - javascript server side for the perl community
 
 =head1 DESCRIPTION
 
+<<<<<<< HEAD
 bla bla
 
+=======
+Pode is a way to run server side javascripts using perl and spidermonkey
+shell
+
+As a perl developer you will be interested in writing bindings, since main
+functions and starter scripts will be implemented in javascript directly
+
+=head1 SYNOPSIS
+
+    #run pode REPL
+    #execute pode from command-line without arguments
+    $ pode
+
+    #run javascript file
+    $ pode /path/to/js/file.js
+
+=head1 Perl Bindings
+
+Writing perl bindings are the same as writing perl modules with some twists
+
+=over 4
+
+=item * You have to register functions you want to use from javascript
+
+=item * Each function must return a value
+
+Returned values must be simple strings, hash refs or array refs
+simple means no code refs, or blessed objects.
+
+=back
+
+Example
+
+    package Pode::Test;
+    use strict;
+    use warnings;
+    
+    sub sayHello {
+        my $self = shift;
+        my $args = shift;
+        return $args->[0] . ' ' . $args->[1];
+    }
+    
+    ##export function to javascript
+    Pode::exports('sayHello');
+    
+    ##in javascript .. test.js
+    var binding = process.binding('Test');
+    var message = binding.sayHello('Hello','There');
+    console.log(message); //Hello There
+    
+    ##now Run this
+    $ pode test.js
+
+If your binding provides a (new) method, pode will register your binding by
+running this method, so make sure to return a blessed object, other wise pode
+will bless your module by default so there is no need to write the (new) method unless
+you have something to initiate there
+
+Now after registering your module with pode, every time pode calls a method from
+javascript you should expect three arguments
+
+=over 4
+
+=item * B<self> : a blessed reference to this package
+
+=item * B<arguments> : array ref of arguments passed from javascript
+
+=item * B<JavaScript::Shell> : a blessed JavaScript::Shell object
+
+=back
+
+Perl Binding Example :
+
+    package Pode::Test;
+    
+    Pode::exports('someMethod');
+    sub someMethod {
+        my $self = shift; ## Pode::Test
+        my $args = shift; ## array ref of arguments
+        my $js = shift; ## JavaScript::Shell object
+        
+        my $name = $args->[0];
+        my $age = $args->[1];
+        
+        ##you can use JavaScript::Shell object to excute
+        ##javascript code on the fly
+        $js->eval(qq!
+            global.name = 'MMM';
+        !);
+        
+        my $newage = $self->_makeMeSoOld($age);
+        
+        return {
+            name => $name
+            age => $newage
+        };
+    }
+    
+    sub _makeMeSoOld {
+        my $self = shift;
+        my $age = shift;
+        
+        ## you're getting extra years
+        ##do you really expect to live this long??
+        return $age + 100;
+    }
+
+Javascript Example :
+    
+    var test = process.binding('Test');
+    
+    var ret = test.someMethod('Mamod',32);
+    
+    console.log(ret.age); //132  now you're 100 years older :)
+    console.log(ret.name);
+    console.log(global.name); //MMM
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.16.2 or,
+at your option, any later version of Perl 5 you may have available.
+
+=head1 COPYRIGHTS
+
+Copyright (C) 2013 by Mamod A. Mehyar <mamod.mehyar@gmail.com>
+
+=cut
+>>>>>>> readme
