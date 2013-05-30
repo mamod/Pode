@@ -9,12 +9,12 @@ before_install:
   - perl Makefile.PL
   - make && make install
   - cd ..
-  
-script:
+
+install:
   - perl Makefile.PL
   - make && make test
   - make install
-
-after_script:
+  
+script:
   - cd tests
   - "perl pode.pl all.js"
