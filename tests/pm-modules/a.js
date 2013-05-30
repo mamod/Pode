@@ -10,4 +10,4 @@ log(num);
 log(num2);
 
 assert.equal(num,10);
-assert.equal(num2,8);
+assert.equal(num2,9);
