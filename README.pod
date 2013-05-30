@@ -7,14 +7,10 @@ Pode - javascript server side for the perl community
 Pode is a way to run server side javascripts using perl and spidermonkey
 shell
 
-<<<<<<< HEAD
-
-=======
 As a perl developer you will be interested in writing bindings, since main
 functions and starter scripts will be implemented in javascript directly
 
 =head1 SYNOPSIS
->>>>>>> readme
 
     #run pode REPL
     #execute pode from command-line without arguments

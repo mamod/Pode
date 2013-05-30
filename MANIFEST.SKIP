@@ -1,13 +1,8 @@
 tests
-<<<<<<< HEAD
-MYMETA.json
-MYMETA.yml
-=======
 examples
 MYMETA.json
 MYMETA.yml
 README\.pod
->>>>>>> readme
 pm_to_blib
 blib
 Makefile$

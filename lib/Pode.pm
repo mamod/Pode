@@ -101,11 +101,7 @@ sub exports {
     if ($LOAD->{module}){
         push @{$LOAD->{exports}},@_;
     } else {
-<<<<<<< HEAD
-        $LOAD->{module} = caller(0);
-=======
         $LOAD->{module} = $module;
->>>>>>> readme
         $LOAD->{exports} = \@_;
     }
 }
@@ -136,11 +132,7 @@ sub binding {
         
         ##normalize module name
         $module =~ s/-/_/g;
-<<<<<<< HEAD
-        
-=======
         $module =~ s/\W+//g;
->>>>>>> readme
         my $pkg = qq!
             package $module;
             use base '$base';
@@ -180,10 +172,6 @@ sub binding {
     return $exports;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> readme
 #==============================================================================
 # sleep
 #==============================================================================
@@ -196,10 +184,6 @@ sub _sleep {
     return 1;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> readme
 1
 
 __END__
@@ -210,10 +194,6 @@ Pode - javascript server side for the perl community
 
 =head1 DESCRIPTION
 
-<<<<<<< HEAD
-bla bla
-
-=======
 Pode is a way to run server side javascripts using perl and spidermonkey
 shell
 
@@ -342,4 +322,3 @@ at your option, any later version of Perl 5 you may have available.
 Copyright (C) 2013 by Mamod A. Mehyar <mamod.mehyar@gmail.com>
 
 =cut
->>>>>>> readme

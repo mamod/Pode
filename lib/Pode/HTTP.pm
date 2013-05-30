@@ -4,11 +4,7 @@ use IO::Select;
 use strict;
 use Data::Dumper;
 use Carp;
-<<<<<<< HEAD
-use constant DEBUG => 1;
-=======
 use constant DEBUG => 0;
->>>>>>> readme
 
 Pode::exports(
     'run',
@@ -37,17 +33,7 @@ sub new {
         select             => IO::Select->new()
     }, $class;
     
-<<<<<<< HEAD
-    $self->{socket} = IO::Socket::INET->new(
-        LocalHost => $self->{host},
-        LocalPort => $self->{port},
-        Listen    => SOMAXCONN,
-        Proto => 'tcp',
-        Reuse => 1
-    ) or die "Cant't create a listening socket: $@";
-=======
     
->>>>>>> readme
     
     return $self;
 }
@@ -55,8 +41,6 @@ sub new {
 
 sub start {
     my ($self,$args,$js) = @_;
-<<<<<<< HEAD
-=======
     my $options = $args->[0];
     $self->{socket} = IO::Socket::INET->new(
         LocalHost => $options->{host},
@@ -66,7 +50,6 @@ sub start {
         Reuse => 1
     ) or die "Cant't create a listening socket: $@";
     
->>>>>>> readme
     my $fh = $self->{socket};
     $self->{socket}->blocking(0);
     $self->{select}->add($fh);
@@ -75,13 +58,7 @@ sub start {
 
 sub loop {
     my ($self,$args,$js) = @_;
-<<<<<<< HEAD
-    
     my @ready = $self->{select}->can_read(0.001);
-    
-=======
-    my @ready = $self->{select}->can_read(0.001);
->>>>>>> readme
     if (@ready){
         foreach my $fh (@ready){
             if ( $fh == $self->{socket} ){
@@ -96,10 +73,6 @@ sub loop {
             }
         }
     }
-<<<<<<< HEAD
-    
-=======
->>>>>>> readme
     return \0;
 }
 
@@ -107,25 +80,14 @@ sub loop {
 sub end {
     my ($self,$args) = @_;
     my $fd = $args->[0];
-<<<<<<< HEAD
-    
-    my $fh = $self->{SERVERS}->{$fd};
-=======
     my $fh = delete $self->{SERVERS}->{$fd};
->>>>>>> readme
     return \0 if !$fh;
     
     DEBUG and warn "Closing Sock No $fd\n";
     
-<<<<<<< HEAD
-    $fh->shutdown(2);
-    $fh->close;
-    delete $self->{SERVERS}->{$fd};
-=======
     ##close socket
     $fh->shutdown(2);
     $fh->close;
->>>>>>> readme
     return 1;
 }
 
