@@ -11,4 +11,4 @@ setTimeout(function(){
 },100);
 
 assert.ok(true);
-assert.ok(0);
+assert.ok(1);
