@@ -60,13 +60,13 @@ sub run {
     $js->Set('process.die' => \&error);
     
     $js->onError(sub{
-        my $s = shift;
+        my $cx = shift;
         my $err = shift;
-        print Dumper $err;
-        $js->destroy();
+        Pode::error($cx,[$err]);
     });
+    $js->call('load' => $nativeDir . $sep . 'trace.js');
+    $js->call('load' => $nativeDir . $sep . 'pode.js');
     
-    $js->call('load' => $nativeDir .'/pode.js');
     eval {
         $js->run();
     };
@@ -74,7 +74,9 @@ sub run {
     if ($@){
         print STDERR "$@\n";
         $js->call('process.die' => $@);
+        exit(1);
     }
+    
     return $self;
 }
 
@@ -86,9 +88,10 @@ sub NeedTickCallback {}
 sub error {
     my $js = shift;
     $js->call('quit',1);
-    my $error = shift->[0];
-    print STDERR $error->{message} . ' at '
-    . $error->{file} . ' line ' . $error->{line} . "\n";
+    #my $error = shift->[0];
+    #print STDERR $error->{message} . ' at '
+    #. $error->{file} . ' line ' . $error->{line} . "\n";
+    #print STDERR $error->{stack};
     exit(1);
 }
 
