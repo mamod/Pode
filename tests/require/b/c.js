@@ -21,13 +21,13 @@
 
 var d = require('./d');
 
-var assert = require('assert');
+var assert = require('test').assert;
 
 var package = require('./package');
 
 assert.equal('world', package.hello);
 
-console.error('load fixtures/b/c.js');
+//console.error('load fixtures/b/c.js');
 
 var string = 'C';
 
@@ -45,5 +45,5 @@ exports.D = function() {
 
 process.on('exit', function() {
   string = 'C done';
-  console.log('b/c.js exit');
+  //console.log('b/c.js exit');
 });

@@ -10,11 +10,3 @@ test.run('./timers.js');
 test.run('./errors');
 
 test.done();
-
-//require('./order.js');
-//require('./require/a.js');
-//require('./module-cache/a.js');
-//require('./pm-modules/a.js');
-//
-//require('./timers.js');
-//require('./errors');

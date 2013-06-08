@@ -1,4 +1,4 @@
-var assert = require('assert');
+var assert = require('test').assert;
 
 global.__arr = [];
 

@@ -21,7 +21,7 @@
 
 var c = require('./b/c');
 
-console.error('load fixtures/a.js');
+//console.error('load fixtures/a.js');
 
 var string = 'A';
 
