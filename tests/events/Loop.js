@@ -36,6 +36,7 @@ var ev2 = EV.run(binding.readFile, file2, function(err,fd){
 
 ev2.on('data',function(data){
     got2 = data;
+    end2 = false;
 });
 
 ev2.on('end',function(data){
@@ -49,12 +50,13 @@ var ev3 = EV.run(binding.readBigFile, file3),
 bytesRead = 0,
 finalizeBytes = 0;
 ev3.on('data',function(data){
-    log('XXXXX');
     bytesRead += data.bytes;
+    //end must be last thing to be called
+    //reset to make sure it's called last
+    finalizeBytes = 0;
 });
 
 ev3.on('end',function(){
-    log('called');
     finalizeBytes = bytesRead;
 });
 
@@ -70,7 +72,7 @@ process.on('exit',function(){
     assert(end1,'Event End Call Received');
     assert(end2,'Event2 End Call Received');
     
-    assert.equal(finalizeBytes,647477);
+    assert.equal(finalizeBytes,binding.size());
     
 });
 

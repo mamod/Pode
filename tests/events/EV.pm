@@ -3,7 +3,7 @@ use Pode::EV;
 use strict;
 use warnings;
 use Data::Dumper;
-Pode::exports();
+Pode::exports('size');
 
 EV 'readFile' => sub {
     
@@ -37,14 +37,13 @@ EV 'readBigFile' => sub {
     
     my $file = $args->[0];
     open my $fh,'<',$file or die $!;
+    $self->{_file} = $fh;
     
     $ev->loop( sub {
         my $read = sysread($fh, my $buf, 64740);
         if ($read){
             $ev->data({ bytes => $read});
         } else  {
-            #sleep 1;
-            print Dumper $read;
             $ev->end();
         }
     });
@@ -52,5 +51,11 @@ EV 'readBigFile' => sub {
     return fileno $fh;
     
 };
+
+sub size {
+    my $self = shift;
+    return (stat $self->{_file})[7];
+}
+
 
 1;
