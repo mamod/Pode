@@ -1,12 +1,22 @@
-
 var test = require('test');
 
-test.run('./order.js');
-test.run('./require/a.js');
-test.run('./module-cache/a.js');
-test.run('./pm-modules/a.js');
-//
-test.run('./timers.js');
-test.run('./errors');
+
+//test perl modules call
+require('./require/a.js');
+require('./module-cache/a.js');
+require('./pm-modules/a.js');
+
+//timers
+require('./timers.js');
+require('./test-timers-linked-list.js');
+require('./test-timers-ordering.js');
+require('./test-timers.js');
+require('./order.js');
+
+//errors
+require('./errors');
+
+//events
+require('./events/Loop.js');
 
 test.done();

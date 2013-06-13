@@ -7,7 +7,8 @@ use File::Spec;
 use Cwd;
 use FindBin qw($Bin);
 our $VERSION = '0.01';
-
+#use Win32::Console::ANSI;
+use Pode::EV;
 ##global object for loaded modules
 my $MODELS = {};
 
@@ -25,6 +26,7 @@ sub run {
     my $self = shift;
     my $argv = shift || \@ARGV;
     my $js = $self->{js};
+    
     local $SIG{INT} = sub {
         $js->eval(qq!
             var t = process.emit('signal','INT');
@@ -32,6 +34,7 @@ sub run {
                 quit();
             }
         !);
+        exit(0);
     };
     
     my $script = File::Spec->canonpath( $self->{path} . '/NativeModules/pode.js');
@@ -39,6 +42,7 @@ sub run {
     
     ##more platforms
     my $platform = $^O eq 'MSWin32' ? 'win32' : 'linux';
+    
     $ENV{STDIN} = fileno STDIN;
     $ENV{STDOUT} = fileno STDOUT;
     
@@ -47,7 +51,7 @@ sub run {
     $js->Set('process.pid' => $$);
     $js->Set('process.argv' => $argv);
     $js->Set('process.env' => \%ENV);
-    $js->Set('process.execPath' => File::Spec->canonpath ( $Bin . '/plackup'));
+    $js->Set('process.execPath' => File::Spec->canonpath ( $Bin . '/pode'));
     $js->Set('process.moduleLoadList' => []);
     $js->Set('process._binding' => \&binding);
     $js->Set('process.pid2' => sub {return $$} );
@@ -58,13 +62,15 @@ sub run {
     $js->Set('process._needTickCallback' => \&NeedTickCallback);
     $js->Set('process._nativedir' => $nativeDir . $sep);
     $js->Set('process.die' => \&error);
+    $js->Set('process.exit' => \&_exit);
+    $js->Set('process.check' => \&check);
     
     $js->onError(sub{
         my $cx = shift;
         my $err = shift;
         Pode::error($cx,[$err]);
     });
-    $js->call('load' => $nativeDir . $sep . 'trace.js');
+    
     $js->call('load' => $nativeDir . $sep . 'pode.js');
     
     eval {
@@ -87,12 +93,17 @@ sub NeedTickCallback {}
 #==============================================================================
 sub error {
     my $js = shift;
+    print Dumper \@_;
     $js->call('quit',1);
-    #my $error = shift->[0];
-    #print STDERR $error->{message} . ' at '
-    #. $error->{file} . ' line ' . $error->{line} . "\n";
-    #print STDERR $error->{stack};
     exit(1);
+}
+
+sub _exit {
+    my $js = shift;
+    my $exitCode = shift->[0] || 0;
+    $js->call('quit',$exitCode);
+    $js->destroy();
+    exit($exitCode);
 }
 
 #==============================================================================
@@ -184,6 +195,21 @@ sub _sleep {
     my $t = $args->[0];
     $t = $t/1000;
     select(undef,undef,undef,$t);
+    return 1;
+}
+
+my $checkCount = 0;
+sub check {
+    my $js = shift;
+    #my $args = shift;
+    #select(undef,undef,undef,0.001);
+    
+    my %ev = Pode::EV::_GET();
+    map {
+        my $e = $ev{$_};
+        $e->run();
+    } keys %ev;
+    
     return 1;
 }
 
