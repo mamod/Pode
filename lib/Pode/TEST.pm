@@ -36,16 +36,16 @@ EV 'test4' => sub {
     open my $fh,'<',$file or die $!;
     my $c = 0;
     $ev->fork( sub {
-        sleep 1;
-        $ev->data({hi => 'there'});
+        #sleep 1;
+        #$ev->data({hi => 'there'});
         
-        #my $read = sysread($fh, my $buf, 90647);
-        #if ($read){
-        #    $ev->data({ hi => $buf});
-        #    #$ev->end(11);
-        #} else {
+        my $read = sysread($fh, my $buf, 128000);
+        if ($read){
+            $ev->data({ hi => $buf});
+            #$ev->end(11);
+        } else {
             $ev->end(11);
-        #}
+        }
     });
     
     return fileno $fh;

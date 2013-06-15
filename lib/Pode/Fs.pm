@@ -13,21 +13,21 @@ Pode::exports {
         'S_IFREG'       =>  S_IFREG,
         'S_IFBLK'       =>  S_IFBLK,
         'S_IFCHR'       =>  S_IFCHR,
-        'S_IFLNK'       =>  eval { S_IFLNK },
+        'S_IFLNK'       =>  eval { S_IFLNK } || 0,
         'S_IFIFO'       =>  S_IFIFO,
-        'S_IFSOCK'      =>  eval { S_IFSOCK },
+        'S_IFSOCK'      =>  eval { S_IFSOCK } || 0,
         
         ##file bindings
         'O_APPEND'      =>  O_APPEND,
         'O_CREAT'       =>  O_CREAT,
-        'O_DIRECTORY'   =>  eval { O_DIRECTORY },
+        'O_DIRECTORY'   =>  eval { O_DIRECTORY } || 0,
         'O_EXCL'        =>  O_EXCL,
-        'O_NOCTTY'      =>  eval { O_NOCTTY },
-        'O_NOFOLLOW'    =>  eval { O_NOFOLLOW },
+        'O_NOCTTY'      =>  eval { O_NOCTTY } || 0,
+        'O_NOFOLLOW'    =>  eval { O_NOFOLLOW } || 0,
         'O_RDONLY'      =>  O_RDONLY,
         'O_RDWR'        =>  O_RDWR,
-        #'O_SYMLINK' => O_SYMLINK,
-        'O_SYNC'        =>  eval { O_SYNC },
+        'O_SYMLINK' => eval "O_SYMLINK" || 0,
+        'O_SYNC'        =>  eval { O_SYNC } || 0,
         'O_TRUNC'       =>  O_TRUNC,
         'O_WRONLY'      =>  O_WRONLY
     }
@@ -38,7 +38,7 @@ sub stat {
     my $args = shift;
     my $path = $args->[0];
     $path =~ s/\\\\\?\\//g;
-    my @stat = CORE::stat($path) or return ERROR($! . " " . $path);
+    my @stat = CORE::stat($path) or return Pode::throw($! . " " . $path);
     return \@stat;
 }
 
@@ -47,7 +47,7 @@ sub fstat {
     my $args = shift;
     my $fd = $args->[0];
     my $fh = $self->{FH}->{$fd};
-    my @stat = CORE::stat($fh) or return ERROR($!);
+    my @stat = CORE::stat($fh) or return Pode::throw($!);
     return \@stat;
 }
 
@@ -67,7 +67,7 @@ sub open {
     my $path = $args->[0];
     my $flag = $args->[1];
     my $mode = $args->[2];
-    $fh = IO::File->new($path,$flag) or return ERROR($! . " " . $path);
+    $fh = IO::File->new($path,$flag) or return Pode::throw($! . " " . $path);
     $self->{FH}->{fileno $fh} = $fh;
     return fileno $fh;
 }
@@ -94,12 +94,6 @@ sub _read {
     return [$buff,$r];
 }
 
-sub ERROR {
-    my $message = shift;
-    return {
-        ERROR => $message
-    };
-}
 
 
 1

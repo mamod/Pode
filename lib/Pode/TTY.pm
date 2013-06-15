@@ -10,7 +10,7 @@ sub guessHandleType {
     my $args = shift;
     
     my $io = IO::Handle->new();
-    my $fh = $io->fdopen($args->[0], 'w') or die;
+    my $fh = $io->fdopen($args->[0], 'w') or Pode::throe($!);
     
     my $type = '';
     if (-t $fh){

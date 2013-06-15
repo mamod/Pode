@@ -9,6 +9,14 @@ use Test::More tests => 1;
 
 BEGIN { use_ok('Pode') };
 
+use Pode;
+
+use FindBin qw($Bin);
+
+my $pode = Pode->new();
+$pode->run([ $Bin . '/../tests/all.js' ]);
+
+
 
 
 __END__

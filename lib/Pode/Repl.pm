@@ -2,6 +2,7 @@ package Pode::Repl;
 use strict;
 use warnings;
 use IO::Handle;
+use Pode::EV;
 
 STDOUT->autoflush(1);
 Pode::exports('put','readline');
@@ -27,6 +28,23 @@ sub readline {
         }
     }
 }
+
+EV 'repl' => sub {
+    my $self = shift;
+    my $args = shift;
+    my $ev = shift;
+    $ev->fork(sub{
+        #sysread(STDIN,my $buf,1024);
+        #$ev->data($buf);
+        while(<STDIN>){
+            #print $_ . "ccccccc\n";
+            $ev->data($_);
+            #$js->Set('process._repl',$_);
+        }
+    });
+    
+    return 1;
+};
 
 
 1;

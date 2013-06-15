@@ -10,11 +10,11 @@ before_install:
   - make && make install
   - cd ..
 
-install:
-  - perl Makefile.PL
-  - make && make test
-  - make install
+#install:
+#  - perl Makefile.PL
+#  - make && make test
+#  - make install
   
-script:
-  - cd tests
-  - "perl runTests.pl"
+#script:
+#  - cd tests
+#  - "perl runTests.pl"

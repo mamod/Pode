@@ -17,7 +17,8 @@ sub new {
     ( my $path = $INC{'Pode.pm'} ) =~ s/\.pm$//;
     my $self = {
         js => JavaScript::Shell->new(),
-        path => $path
+        path => $path,
+        pid => $$
     };
     return bless($self,$class);
 }
@@ -28,6 +29,7 @@ sub run {
     my $js = $self->{js};
     
     local $SIG{INT} = sub {
+        
         $js->eval(qq!
             var t = process.emit('signal','INT');
             if (t \!== true){
@@ -93,7 +95,7 @@ sub NeedTickCallback {}
 #==============================================================================
 sub error {
     my $js = shift;
-    print Dumper \@_;
+    #print Dumper \@_;
     $js->call('quit',1);
     exit(1);
 }
@@ -169,8 +171,7 @@ sub binding {
         $class = bless({},$module);
     }
     
-    my $exports;
-    $exports = $LOAD;
+    my $exports = $LOAD;
     
     #save loaded model
     $MODELS->{$module} = $class;
@@ -198,7 +199,6 @@ sub _sleep {
     return 1;
 }
 
-my $checkCount = 0;
 sub check {
     my $js = shift;
     #my $args = shift;
@@ -211,6 +211,30 @@ sub check {
     } keys %ev;
     
     return 1;
+}
+
+sub throw {
+    my $msg = shift;
+    my @c = caller;
+    return {
+        name => 'Error',
+        message => $msg,
+        fileName => $c[1],
+        lineNumber => $c[2]
+    };
+}
+
+sub DESTROY {
+    my $self = shift;
+    if ($self->{pid} == $$){
+        my %ev = Pode::EV::_GET();
+        map {
+            my $e = $ev{$_};
+            $e->destroy();
+        } keys %ev;
+    } else {
+        kill 9,$$;
+    }
 }
 
 1
