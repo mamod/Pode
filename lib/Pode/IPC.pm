@@ -21,8 +21,7 @@ EV 'fork' => sub {
     use Symbol 'gensym'; my $err = gensym;
     my $pid = open3($to, $from, $err, ($prog,@args)) or return Pode::throw($!);
     $ev->{pid} = $pid;
-    $ev->fork(sub{
-        
+    $ev->loop(sub{
         if (waitpid($pid, &WNOHANG) > 0) {
             ##make sure that we consumed all messages
             ##before emitting exit
@@ -42,8 +41,9 @@ EV 'fork' => sub {
 
 sub emitter {
     my ($ev,$fh,$type) = @_;
-    my $len = (stat($fh))[7];
+    my $len = -s $fh;
     if ($len){
+        print Dumper $len;
         sysread($fh,my $buf,$len);
         $ev->data({
             $type => $buf
