@@ -3,9 +3,9 @@ var path = require('path'),
 assert = require('test').assert,
 binding = require('./EV.pm');
 
-var file1 = path.resolve(__dirname + '/files/test1.txt');
-var file2 = path.resolve(__dirname + '/files/test2.txt');
-var file3 = path.resolve(__dirname + '/files/big.txt');
+var file1 = path.resolve(__dirname + '/../files/test1.txt');
+var file2 = path.resolve(__dirname + '/../files/test2.txt');
+var file3 = path.resolve(__dirname + '/../files/big.txt');
 
 var got,got2,fd1,fd2,
 end2 = false,
@@ -61,6 +61,22 @@ ev3.on('end',function(){
 });
 
 //=============================================================================
+// Error Event
+//=============================================================================
+var ev4 = EV.run(binding.testError, file2, function(err,fd){
+});
+
+
+var gotError;
+ev4.on('error',function(err){
+    gotError = new Error(err);
+});
+
+ev4.on('data',function(data){
+    //log(data);
+});
+
+//=============================================================================
 // Process Exit
 //=============================================================================
 process.on('exit',function(){
@@ -73,6 +89,10 @@ process.on('exit',function(){
     assert(end2,'Event2 End Call Received');
     
     assert.equal(finalizeBytes,binding.size());
+    
+    //errors
+    assert(gotError instanceof Error);
+    assert.equal(gotError.message,'Something Wrong');
     
 });
 

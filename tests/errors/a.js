@@ -1,10 +1,11 @@
-var assert = require('test').assert;
+var test = require('test');
+var assert = test.assert;
 
 setTimeout(function(){
     try {
         throw new TypeError('error');
     } catch (e){
-        assert.equal(e.lineNumber,5);
+        assert.equal(e.lineNumber,6);
         assert.ok(e instanceof TypeError);
         assert.equal(e.fileName,__filename);
     }

@@ -1,6 +1,6 @@
 var test = require('test');
 
-
+//require('events').setMaxListeners(1000);
 //test perl modules call
 require('./require/a.js');
 require('./module-cache/a.js');
@@ -17,6 +17,10 @@ require('./order.js');
 require('./errors');
 
 //events
-require('./events/Loop.js');
+require('./events/all.js');
 
+//ipc
+require('./ipc/all.js');
+
+test.plan(211);
 test.done();

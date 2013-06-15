@@ -32,7 +32,7 @@ var start = Date.now();
 var f = function(i) {
   if (i <= N) {
     // check order
-    assert.equal(i, last_i + 1, 'order is broken: ' + i + ' != ' + last_i + ' + 1');
+    assert.equal(i, last_i + 1);
     last_i = i;
 
     // check that this iteration is fired at least 1ms later than the previous
