@@ -20,8 +20,8 @@ EV 'fork' => sub {
     
     use Symbol 'gensym'; my $err = gensym;
     my $pid = open3($to, $from, $err, ($prog,@args)) or return Pode::throw($!);
-    
-    $ev->loop(sub{
+    $ev->{pid} = $pid;
+    $ev->fork(sub{
         
         if (waitpid($pid, &WNOHANG) > 0) {
             ##make sure that we consumed all messages
