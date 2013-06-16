@@ -12,4 +12,4 @@ for (1..10000){
 
 print STDERR "This is An Error";
 
-exit(2);
+exit(129);

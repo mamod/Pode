@@ -22,7 +22,7 @@ EV 'fork' => sub {
     my $pid = open3($to, $from, $err, ($prog,@args)) or return Pode::throw($!);
     $ev->{pid} = $pid;
     $ev->loop(sub{
-        if (waitpid($pid, -1) > 0) {
+        if (waitpid($pid, &WNOHANG) > 0) {
             ##make sure that we consumed all messages
             ##before emitting exit
             while(emitter($ev,$from,'data') || emitter($ev,$err,'error') ){}

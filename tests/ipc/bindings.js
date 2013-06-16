@@ -38,7 +38,7 @@ ev.on('data',function(res){
 });
 
 ev.on('end',function(code){
-    assert.strictEqual(2,code);
+    assert.strictEqual(129,code);
 });
 
 process.on('exit',function(){
