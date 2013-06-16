@@ -41,12 +41,12 @@ EV 'fork' => sub {
 
 sub emitter {
     my ($ev,$fh,$type) = @_;
+    seek $fh,0,0;
     my $len = -s $fh;
-    if ($len){
-        print Dumper $len;
-        sysread($fh,my $buf,$len);
+    read($fh,my $buf,$len);
+    if ($buf){
         $ev->data({
-            $type => $buf
+        $type => $buf
         });
     }
     return $len;
