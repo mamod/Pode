@@ -172,6 +172,9 @@ sub end {
     my $pointer = $self->{pointer};
     delete $EVENTS{$pointer};
     
+    ##kill child processes if any
+    $self->destroy;
+    
     if ($self->{fork}){
         $self->{running} = 0;
         $self->_json('EV.end','EOF',@_);
@@ -205,6 +208,7 @@ sub destroy {
     my $self = shift;
     delete $EVENTS{$self->{pointer}};
     if (my $pid = $self->{pid}){
+        delete $self->{pid};
         kill 9,$pid;
     }
 }

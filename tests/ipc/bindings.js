@@ -48,3 +48,8 @@ process.on('exit',function(){
 
 test.plan(5);
 //test.done();
+setTimeout(function(){
+if (interval){
+    clearInterval(interval);
+}
+},5000);
