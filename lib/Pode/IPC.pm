@@ -6,6 +6,9 @@ use warnings;
 use Data::Dumper;
 use IO::Handle;
 use POSIX ":sys_wait_h";
+use Symbol 'gensym';
+
+my $ready = $^O eq 'MSWin32' ? \&Ready_MS : \&Ready;
 
 EV 'fork' => sub {
     
@@ -18,17 +21,23 @@ EV 'fork' => sub {
     my $ev = shift;
     my ($from,$to);
     
-    use Symbol 'gensym'; my $err = gensym;
+    my $err = gensym;
     my $pid = open3($to, $from, $err, ($prog,@args)) or return Pode::throw($!);
+    
+    $from->blocking(0);
+    $from->autoflush(1);
+    
+    my $exit = undef;
     $ev->{pid} = $pid;
     $ev->loop( sub {
         
-        emitter($ev,$from,'data');
-        emitter($ev,$err,'error');
+        my $read1 = emitter($ev,$from,'data');
+        my $read2 = emitter($ev,$err,'error');
         
-        if (waitpid($pid, &WNOHANG) > 0) {
-            my $exit_status = $? >> 8;
-            $ev->end($exit_status);
+        if (!defined $exit && waitpid($pid, &WNOHANG) > 0) {
+            $exit = $? >> 8;
+        } elsif (defined $exit && !$read1 && !$read2){
+            $ev->end($exit);
         }
     });
     
@@ -37,16 +46,32 @@ EV 'fork' => sub {
 
 sub emitter {
     my ($ev,$fh,$type) = @_;
-    my $len = -s $fh;
-    read($fh,my $buf,$len);
-    if ($buf){
+    my $is_ready = $ready->($fh);
+    my $read = 0;
+    if ($is_ready){
+        sysread($fh,my $buf,2048);
         $ev->data({
             $type => $buf
-        });
+        }) if $buf;
     }
-    return $len;
+    return $read;
 }
 
+sub Ready_MS {
+    my $fh = shift;
+    return -s $fh;
+}
+
+sub Ready {
+    my $fh = shift;
+    my $fd = fileno $fh;
+    my $rfd = '';
+    vec ($rfd, $fd, 1) = 1;
+    if (select ($rfd, undef, undef, 0) >= 0 && vec($rfd, $fd, 1)){
+        return 1;
+    }
+    return 0;
+}
 
 1;
 
