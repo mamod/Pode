@@ -49,7 +49,7 @@ sub emitter {
     my $is_ready = $ready->($fh);
     my $read = 0;
     if ($is_ready){
-        sysread($fh,my $buf,2048);
+        $read = sysread($fh,my $buf,2048);
         $ev->data({
             $type => $buf
         }) if $buf;
