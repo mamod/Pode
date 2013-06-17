@@ -54,7 +54,6 @@ ev2.on('data',function(res){
     if (res.error){
         assert.ok(1,1,'We recieved an error message');
     } else if (res.data){
-        log(res.data);
         //this event must received before event 1
         assert.ok(datas.length == 0,'IPC event2 received before event1');
         assert.equal(res.data.length,100);
@@ -67,7 +66,7 @@ ev2.on('end',function(code){
 });
 
 process.on('exit',function(){
-    var data = datas.split('\r\n');
+    var data = datas.split('\n');
     assert.equal(data[data.length - 2],10000);
 });
 
