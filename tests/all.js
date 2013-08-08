@@ -13,10 +13,10 @@ require('./timers/all.js');
 require('./errors');
 
 //events
-require('./events/all.js');
+//require('./events/all.js');
 
 //ipc
-require('./ipc/all.js');
+//require('./ipc/all.js');
 
 //moved to a seperate thread
 //buffer
@@ -25,5 +25,5 @@ require('./ipc/all.js');
 //require('./fs/all.js');
 
 
-test.plan(211);
+test.plan(190);
 test.done();
