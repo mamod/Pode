@@ -14,9 +14,9 @@ var interval = setInterval(function(){
 // first event
 //=============================================================================
 var pl = path.resolve(__dirname + '/test.pl');
-var ev = EV.run(binding.fork,'perl',[pl,'First']);
+var ev = process.wrap(binding.fork,'perl',[pl,'First']);
 var datas = '';
-ev.on('data',function(res){
+ev.onData = function(res){
     var data = res.data;
     var error = res.error;
     
@@ -37,36 +37,36 @@ ev.on('data',function(res){
         datas += data;
     }
     
-});
+};
 
-ev.on('end',function(code){
+ev.onExit = function(code){
     assert.strictEqual(129,code);
-});
-
+};
 
 //=============================================================================
 // second Event
 //=============================================================================
 var pl2 = path.resolve(__dirname + '/test2.pl');
-var ev2 = EV.run(binding.fork,'perl',[pl2]);
+var ev2 = process.wrap(binding.fork,'perl',[pl2]);
 
-ev2.on('data',function(res){
+ev2.onData = function(res){
     if (res.error){
         assert.ok(1,1,'We recieved an error message');
     } else if (res.data){
+        //log(res.data);
         //this event must received before event 1
         assert.ok(datas.length == 0,'IPC event2 received before event1');
         assert.equal(res.data.length,100);
     }
-});
+};
 
 
-ev2.on('end',function(code){
-    assert.equal(code,255,'IPC Exit code 255');
-});
+ev2.onExit = function(code){
+    assert.strictEqual(code,255,'IPC Exit code 255');
+};
 
 process.on('exit',function(){
-    var data = datas.split('\n');
+    var data = datas.split('\r\n');
     assert.equal(data[data.length - 2],10000);
 });
 

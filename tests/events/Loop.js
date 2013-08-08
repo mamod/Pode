@@ -11,70 +11,64 @@ var got,got2,fd1,fd2,
 end2 = false,
 end1 = false;
 
-
 //=============================================================================
 // First Event
 //=============================================================================
-var ev1 = EV.run(binding.readFile, file1, function(err,fd){
+var ev1 = process.wrap(binding.readFile, file1, function(err,fd){
     fd1 = fd;
 });
 
-ev1.on('data',function(data){
+ev1.onData = function(data){
     got = data;
-});
+};
 
-ev1.on('end',function(data){
+ev1.onExit = function(){
     end1 = true;
-});
+};
 
 //=============================================================================
 // Second Event
 //=============================================================================
-var ev2 = EV.run(binding.readFile, file2, function(err,fd){
+var ev2 = process.wrap(binding.readFile, file2, function(err,fd){
     fd2 = fd;
 });
 
-ev2.on('data',function(data){
+ev2.onData = function(data){
     got2 = data;
     end2 = false;
-});
+};
 
-ev2.on('end',function(data){
+ev2.onExit = function(data){
     end2 = true;
-});
+};
 
 //=============================================================================
 // Third Event - read big file and return bytes read
 //=============================================================================
-var ev3 = EV.run(binding.readBigFile, file3),
+var ev3 = process.wrap(binding.readBigFile, file3),
 bytesRead = 0,
 finalizeBytes = 0;
-ev3.on('data',function(data){
+ev3.onData = function(data){
     bytesRead += data.bytes;
     //end must be last thing to be called
     //reset to make sure it's called last
     finalizeBytes = 0;
-});
+};
 
-ev3.on('end',function(){
+ev3.onExit = function(){
     finalizeBytes = bytesRead;
-});
+};
 
 //=============================================================================
 // Error Event
 //=============================================================================
-var ev4 = EV.run(binding.testError, file2, function(err,fd){
+var ev4 = process.wrap(binding.testError, file2, function(err,fd){
 });
-
 
 var gotError;
-ev4.on('error',function(err){
+ev4.onError = function(err){
     gotError = new Error(err);
-});
-
-ev4.on('data',function(data){
-    //log(data);
-});
+};
 
 //=============================================================================
 // Process Exit

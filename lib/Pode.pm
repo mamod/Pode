@@ -1,16 +1,17 @@
 package Pode;
 use strict;
 use warnings;
+use lib "e:/shell/lib";
 use JavaScript::Shell;
 use Data::Dumper;
 use File::Spec;
 use Cwd;
 use FindBin qw($Bin);
-our $VERSION = '0.01';
 #use Win32::Console::ANSI;
-use Pode::EV;
-##global object for loaded modules
+use Pode::Wrapper;
 my $MODELS = {};
+
+our $VERSION = '0.03';
 
 sub new {
     my $class = shift;
@@ -29,7 +30,6 @@ sub run {
     my $js = $self->{js};
     
     local $SIG{INT} = sub {
-        
         $js->eval(qq!
             var t = process.emit('signal','INT');
             if (t \!== true){
@@ -56,7 +56,7 @@ sub run {
     $js->Set('process.execPath' => File::Spec->canonpath ( $Bin . '/pode'));
     $js->Set('process.moduleLoadList' => []);
     $js->Set('process._binding' => \&binding);
-    $js->Set('process.pid2' => sub {return $$} );
+    $js->Set('process.getPid' => sub {return $$} );
     $js->Set('process.cwd' => sub { return cwd() } );
     $js->Set('process.sleep' => \&_sleep);
     $js->Set('process.platform' => $platform);
@@ -66,6 +66,29 @@ sub run {
     $js->Set('process.die' => \&error);
     $js->Set('process.exit' => \&_exit);
     $js->Set('process.check' => \&check);
+    $js->Set('process._error' => sub {$!});
+    
+    ##this method will be called when we run a script as a
+    ##daemon process, it will save process pid and service name
+    my $servicecount = 0;
+    $js->Set('process.savepid' => sub {
+        #my $self = shift;
+        my $js = shift;
+        my $args = shift;
+        my $filename = $args->[0];
+        my $service = $args->[1];
+        $service = 'service' . $servicecount++ if $service eq 'default';
+        my $jspid = $js->{jshell_pid};
+        
+        ##get services tmp
+        my $file = File::Spec->canonpath( $self->{path} . '/bin/services.tmp');
+        
+        open my $fh,'>>', $file;
+        print $fh "$service#$filename#$jspid\n";
+        close $fh;
+        return 1;
+        
+    });
     
     $js->onError(sub{
         my $cx = shift;
@@ -95,7 +118,7 @@ sub NeedTickCallback {}
 #==============================================================================
 sub error {
     my $js = shift;
-    #print Dumper \@_;
+    print Dumper \@_;
     $js->call('quit',1);
     exit(1);
 }
@@ -199,17 +222,30 @@ sub _sleep {
     return 1;
 }
 
+
+#sleep counter
+#making things faster for event loop
+#we will sleep on a counter interval
+#so every 100 event loop we sleep once
+my $SLEEP = 0;
 sub check {
     my $js = shift;
-    #my $args = shift;
-    #select(undef,undef,undef,0.001);
-    
-    my %ev = Pode::EV::_GET();
-    map {
-        my $e = $ev{$_};
-        $e->run();
-    } keys %ev;
-    
+    my %ev = Pode::Wrapper::_GET();
+    if (!%ev){
+        select(undef,undef,undef,0.001);
+    } else {
+        $SLEEP++;
+        map {
+            my $e = $ev{$_};
+            $e->run();
+        } keys %ev;
+        if ($SLEEP > 10){
+            select(undef,undef,undef,0.001);
+            $SLEEP = 0;
+        } else {
+            select(undef,undef,undef,0.001);
+        }
+    }
     return 1;
 }
 
@@ -226,16 +262,167 @@ sub throw {
 
 sub DESTROY {
     my $self = shift;
+    #we need to kill all wrappers
     if ($self->{pid} == $$){
-        my %ev = Pode::EV::_GET();
+        my %ev = Pode::Wrapper::_GET();
         map {
             my $e = $ev{$_};
             $e->destroy();
         } keys %ev;
     } else {
-        kill 9,$$;
+        kill -9,$$;
     }
 }
+
+###############################################################################
+#==============================================================================
+# Daemon Service
+#==============================================================================
+sub _start {
+    my $args = shift;
+    my @args = @{$args};
+    
+    ##remove -start
+    shift @args;
+    my $file = shift @args;
+    
+    my $service = 'default';
+    if ($file =~ s/^-//){
+        $service = $file;
+        $file = shift @args;
+    }
+    
+    push @args, '-daemon';
+    push @args, $service;
+    print Dumper \@args;
+    my $options = _getOptions();
+    print Dumper $options;
+    
+    my @cmd = (
+        $options->{nohup},
+        $options->{wperl} || 'perl',
+        File::Spec->canonpath($options->{path} . "/bin/daemon.pl"),
+        'pode',
+        $file,
+        @args,
+        #'1>E:/ls.txt 2>&1 &'
+    );
+    
+    system(@cmd);
+    exit(0);
+}
+
+sub _restart {
+    my $args = shift;
+    kill -9,$args->[1];
+    print "Killed\n";
+    exit(0);
+}
+
+
+sub _stop {
+    my $args = shift;
+    
+    my $options = _getOptions();
+    open my $fh,'<',$options->{pidfile};
+    
+    my @newLines;
+    
+    my $val = $args->[1];
+    if (!$val){
+        print "No enough arguments\n"
+        . "either specify a service name or pid number\n"
+        . "to check running services run 'pode -services'\n";
+        exit;
+    } else {
+        $val =~ s/^-//;
+    }
+    
+    my $isNumber = $val =~ m/\d+/ ? 1 : 0;
+    
+    while (<$fh>){
+        my $line = $_;
+        my @fields = split /#/,$line;
+        my $service = $fields[0];
+        my $file = $fields[1];
+        my $pid = $fields[2];
+        
+        if (!$isNumber && $val eq 'all'){
+            kill -9, $pid;
+            print "killed $service $pid\n";
+        } else {
+            if ($isNumber){
+                if ($val == $pid){
+                    kill -9, $pid;
+                    print "killed $service $pid\n";
+                } else {
+                    push @newLines,$line;
+                }
+            } else {
+                if ($val eq $service || $val eq $file){
+                    kill -9, $pid;
+                    print "killed $service $pid\n";
+                } else {
+                    push @newLines,$line;
+                }
+            }
+        }
+    }
+    close $fh;
+    
+    open my $fh2,'>',$options->{pidfile};
+    my $lines = join '',@newLines;
+    print $fh2 $lines;
+    close $fh2;
+    
+    exit;
+}
+
+##list running services
+sub _services {
+    my $options = _getOptions();
+    open my $fh,'<',$options->{pidfile};
+    while (<$fh>){
+        my $line = $_;
+        my @fields = split /#/,$line;
+        my $service = $fields[0];
+        my $file = $fields[1];
+        my $pid = $fields[2];
+        my $exists = kill 0, $pid;
+        if ( $exists ) {
+            print "$service  |  $file  |  $pid\n";
+        }
+    }
+    close $fh;
+    exit(0);
+}
+
+sub _getOptions {
+    
+    my $options = {};
+    ( my $path = $INC{'Pode.pm'} ) =~ s/\.pm$//;
+    
+    $options->{path} = $path;
+    
+    if ( $^O eq 'MSWin32' ) {
+        $options->{isWindows} = 1;
+        ( my $wperl = $^X ) =~ s/perl\.exe$/wperl.exe/i;
+        if ( ! -x $wperl ) {
+            die "no wperl.exe found";
+        }
+        
+        $options->{wperl} = $wperl;
+        $options->{nohup} = File::Spec->canonpath( $path . '/bin/nohup.exe');
+    } else {
+        use IPC::Cmd 'can_run';
+        $options->{nohup} = can_run('nohup') or die 'nohup is not installed!';
+    }
+    
+    $options->{pidfile} = File::Spec->canonpath($path . "/bin/services.tmp");
+    
+    return $options;
+}
+
 
 1
 

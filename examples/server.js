@@ -6,8 +6,10 @@ var options = {
     host : 'localhost'
 };
 
+var i = 0;
 var server = http.run(options,function(request,response){
-    response.write('Hi From Pode Server');
+    console.log(request);
+    response.write('Hi From Pode Server ' + i++);
     response.end();
 });
 

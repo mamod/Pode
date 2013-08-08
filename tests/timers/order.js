@@ -1,17 +1,19 @@
-var assert = require('assert');
+var assert = require('test').assert;
+
 
 var i = 0;
+
+
+
 setTimeout(function(){
     i++;
     assert.equal(i,2);
 },100);
 
-
 setTimeout(function(){
     i++;
     assert.equal(i,3);
 },100);
-
 
 setTimeout(function(){
     i++;
@@ -45,7 +47,7 @@ setTimeout(function(){
 
 setTimeout(function(){
     i++;
-    assert.equal(i,7);
+    assert.equal(i,9);
 },100);
 
 setTimeout(function(){
@@ -74,5 +76,8 @@ setTimeout(function(){
     
 },100);
 
-
+process.on('exit',function(){
+   // throw('f');
+    assert.equal(i,14);
+});
 

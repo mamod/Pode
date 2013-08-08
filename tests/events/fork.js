@@ -13,21 +13,20 @@ var got,got2,fd1,fd2,
 end2 = false,
 end1 = false;
 
-
 //=============================================================================
 // First Event
 //=============================================================================
-var ev1 = EV.run(binding.readFile2, file1, function(err,fd){
+var ev1 = process.wrap(binding.readFile2, file1, function(err,fd){
     fd1 = fd;
 });
 
-ev1.on('data',function(data){
+ev1.onData = function(data){
     got = data;
-});
+};
 
-ev1.on('end',function(data){
+ev1.onExit = function(){
     end1 = true;
-});
+};
 
 //=============================================================================
 // Second Event
@@ -37,51 +36,48 @@ var interval = setInterval(function(){
     icounter++;
 },100);
 
-var ev2 = EV.run(binding.readFile2, file2, function(err,fd){
+var ev2 = process.wrap(binding.readFile2, file2, function(err,fd){
     fd2 = fd;
 });
 
-ev2.on('data',function(data){
+ev2.onData = function(data){
     got2 = data;
     end2 = false;
     clearInterval(interval);
-});
+};
 
-ev2.on('end',function(data){
+ev2.onExit = function(){
     end2 = true;
-});
+}
 
 //=============================================================================
 // Third Event - read big file and return bytes read
 //=============================================================================
-var ev3 = EV.run(binding.readBigFile2, file3),
+var ev3 = process.wrap(binding.readBigFile2, file3),
 bytesRead = 0,
 finalizeBytes = 0;
-ev3.on('data',function(data){
+
+ev3.onData = function(data){
     bytesRead += data.bytes;
     //end must be last thing to be called
     //reset to make sure it's called last
     finalizeBytes = 0;
-});
+};
 
-ev3.on('end',function(data){
+ev3.onExit = function(){
     finalizeBytes = bytesRead;
-});
+};
+
 //=============================================================================
 // Error Event
 //=============================================================================
-var ev4 = EV.run(binding.testError2, function(err,fd){
-    
-});
-
+var ev4 = process.wrap(binding.testError2);
 
 var gotError;
-ev4.on('error',function(err){
-    gotError = new Error(err);
-});
 
-ev4.on('data',function(data){
-});
+ev4.onError = function(err){
+    gotError = new Error(err);
+};
 
 //=============================================================================
 // Process Exit
@@ -102,7 +98,7 @@ process.on('exit',function(){
     //is blocking for 1 second
     //this is because readFile2 function is
     //running through a forking sub
-    assert.ok(icounter >= 9,'Non blocking setInterval got ' + icounter);
+    assert.ok(icounter >= 5,'Non blocking setInterval got ' + icounter);
     
     //errors
     assert(gotError instanceof Error);

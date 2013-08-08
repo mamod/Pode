@@ -17,9 +17,7 @@ Pode::exports(
 );
 
 sub new {
-    
     my($class, %args) = @_;
-
     my $self = bless {
         host               => $args{host} || 0,
         port               => $args{port} || 80,
@@ -32,12 +30,8 @@ sub new {
         ssl_cert_file      => $args{ssl_cert_file},
         select             => IO::Select->new()
     }, $class;
-    
-    
-    
     return $self;
 }
-
 
 sub start {
     my ($self,$args,$js) = @_;
@@ -68,6 +62,7 @@ sub loop {
                 $self->{select}->remove($fh);
                 DEBUG and warn "Sending To Process [$$]\n";
                 my $fd = fileno $fh;
+                #binmode $fh, "utf8";
                 $self->{SERVERS}->{$fd} = $fh;
                 return $fd;
             }
@@ -76,15 +71,18 @@ sub loop {
     return \0;
 }
 
-
 sub end {
     my ($self,$args) = @_;
     my $fd = $args->[0];
+    my $content = $args->[1];
     my $fh = delete $self->{SERVERS}->{$fd};
     return \0 if !$fh;
     
-    DEBUG and warn "Closing Sock No $fd\n";
+    if ($content){
+        print $fh $content;
+    }
     
+    DEBUG and warn "Closing Sock No $fd\n";
     ##close socket
     $fh->shutdown(2);
     $fh->close;
@@ -93,28 +91,20 @@ sub end {
 
 sub write {
     my ($self,$args,$js) = @_;
-    
     my $fd = $args->[0];
     my $content = $args->[1];
     my $length = $args->[2] || 0;
-    
     my $fh = $self->{SERVERS}->{$fd};
     return \0 if !$fh;
-    
-    #print Dumper $args;
     syswrite($fh, $content, $length);
-    #$self->end($args);
     return 1;
 }
 
-
 sub read {
     my ($self,$args) = @_;
-    
     my $content;
     my $fh = $self->{SERVERS}->{$args->[0]};
     my $bufferRead = $args->[1];
-    
     #$fh->blocking(1);
     my $disconnect = 0;
     
@@ -134,7 +124,6 @@ sub read {
     return -1 if $disconnect;
     return $buf;
 }
-
 
 sub sendFile {
     my $self = shift;

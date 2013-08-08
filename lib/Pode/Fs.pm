@@ -4,8 +4,9 @@ use warnings;
 use Data::Dumper;
 use Fcntl ':mode';
 use FileHandle;
+use Pode::Wrapper;
 
-Pode::exports('stat','fstat','lstat','open','close','_read');
+Pode::exports('stat','fstat','lstat','open','close','read','write','unlink');
 Pode::exports {
     constants => {
         'S_IFMT'        =>  S_IFMT,
@@ -47,6 +48,9 @@ sub fstat {
     my $args = shift;
     my $fd = $args->[0];
     my $fh = $self->{FH}->{$fd};
+    if (!ref $fh){
+        $fh =~ s/\\\\\?\\//g;
+    }
     my @stat = CORE::stat($fh) or return Pode::throw($!);
     return \@stat;
 }
@@ -55,23 +59,34 @@ sub lstat {
     my $self = shift;
     my $args = shift;
     my $file = $args->[0];
-    my @stat = lstat($file);
+    $file =~ s/\\\\\?\\//g;
+    my @stat = lstat($file) or return Pode::throw($!);
     return \@stat;
 }
 
+my $dircount = 0;
 sub open {
     my $self = shift;
     my $args = shift;
     my $js = shift;
+    
     my $fh;
     my $path = $args->[0];
-    my $flag = $args->[1];
-    my $mode = $args->[2];
-    $fh = IO::File->new($path,$flag) or return Pode::throw($! . " " . $path);
+    my $mode = $args->[1];
+    my $perm = $args->[2];
+    if (-d $path){
+        $dircount++;
+        my $dir = "dir_$dircount";
+        $self->{FH}->{$dir} = $path;
+        return $dir;
+    } else {
+        sysopen ($fh, $path, $mode, $perm) or return Pode::throw($! . " " . $path);
+    }
+    
     $self->{FH}->{fileno $fh} = $fh;
+    
     return fileno $fh;
 }
-
 
 sub close {
     my $self = shift;
@@ -82,20 +97,67 @@ sub close {
     return 1;
 }
 
-sub _read {
-    my $self = shift;
-    my $args = shift;
-    my $buff;
-    my $fd = $args->[0];
-    my $len = $args->[1];
-    my $pos = $args->[2];
-    my $fh = $self->{FH}->{$fd};
-    my $r = sysread($fh,$buff,$len,$pos);# or return pode()->throw($!);
-    return [$buff,$r];
+sub GET_OFFSET {
+    defined $_[0] ? $_[0] : -1;
 }
 
+sub read {
+    
+    my $self = shift;
+    my $args = shift;
+    my $fd = $args->[0];
+    my $buffer = $args->[1];
+    my $off = $args->[2];
+    
+    my $object = Pode::Wrapper::Get($buffer);
+    
+    my $buffer_length = $object->{buffer}->length;
+    
+    if ($off >= $buffer_length) {
+        return Pode::throw("Offset is out of bounds");
+    }
+    
+    my $len = $args->[3];
+    if ($off + $len > $buffer_length) {
+        return  Pode::throw("Length extends beyond buffer");
+    }
+    
+    my $pos = GET_OFFSET($args->[4]);
+    my $fh = $self->{FH}->{$fd};
+    seek $fh,0,$pos;
+    
+    my $r = sysread($fh, $object->{buffer}->{buf}, $len);
+    return $r;
+}
 
+sub write {
+    my $self = shift;
+    my $args = shift;
+    my $js = shift;
+    my $fd = $args->[0];
+    my $wrapper = $args->[1];
+    my $offset = $args->[2];
+    my $length = $args->[3];
+    my $position = $length - $offset;
+    my $ret = {};
+    my $fh = $self->{FH}->{$fd};
+    local $ret->{buf} = Pode::Wrapper::Get($wrapper)->{buffer};
+    local $ret->{str} = $ret->{buf}->toString($offset,$length);
+    my $written = syswrite($fh,$ret->{str});
+    undef $ret;
+    return $written;
+}
+
+sub unlink {
+    my $self = shift;
+    my $args = shift;
+    my $file = $args->[0];
+    $file =~ s/\\\\\?\\//g;
+    unlink $file or return Pode::throw($!);
+    return \1;
+}
 
 1
 
 __END__
+

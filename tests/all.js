@@ -1,17 +1,13 @@
 var test = require('test');
 
-//require('events').setMaxListeners(1000);
+process.setMaxListeners(1000);
 //test perl modules call
 require('./require/a.js');
 require('./module-cache/a.js');
 require('./pm-modules/a.js');
 
 //timers
-require('./timers.js');
-require('./test-timers-linked-list.js');
-require('./test-timers-ordering.js');
-require('./test-timers.js');
-require('./order.js');
+require('./timers/all.js');
 
 //errors
 require('./errors');
@@ -21,6 +17,13 @@ require('./events/all.js');
 
 //ipc
 require('./ipc/all.js');
+
+//moved to a seperate thread
+//buffer
+//require('./buffer/all.js');
+//file system
+//require('./fs/all.js');
+
 
 test.plan(211);
 test.done();

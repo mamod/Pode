@@ -1,12 +1,12 @@
 package EV;
-use Pode::EV;
+use Pode::Wrapper;
 use strict;
 use warnings;
 use Data::Dumper;
 Pode::exports('size','err');
 
 
-EV 'testError' => sub {
+Wrap 'testError' => sub {
     my $self = shift;
     my $args = shift;
     my $ev = shift;
@@ -17,7 +17,7 @@ EV 'testError' => sub {
     return 1;
 };
 
-EV 'testError2' => sub {
+Wrap 'testError2' => sub {
     my $self = shift;
     my $args = shift;
     my $ev = shift;
@@ -28,7 +28,7 @@ EV 'testError2' => sub {
     return 1;
 };
 
-EV 'readFile' => sub {
+Wrap 'readFile' => sub {
     my $self = shift;
     my $args = shift;
     my $ev = shift;
@@ -48,7 +48,7 @@ EV 'readFile' => sub {
     return fileno $fh;
 };
 
-EV 'readFile2' => sub {
+Wrap 'readFile2' => sub {
     my $self = shift;
     my $args = shift;
     my $ev = shift;
@@ -67,7 +67,7 @@ EV 'readFile2' => sub {
 };
 
 
-EV 'readBigFile' => sub {
+Wrap 'readBigFile' => sub {
     
     my $self = shift;
     my $args = shift;
@@ -91,7 +91,7 @@ EV 'readBigFile' => sub {
 };
 
 
-EV 'readBigFile2' => sub {
+Wrap 'readBigFile2' => sub {
     
     my $self = shift;
     my $args = shift;

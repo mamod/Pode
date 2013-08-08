@@ -5,7 +5,7 @@ exports.readFile = function(file,callback){
     
     try {
         
-        ev = EV.run(binding.readFile,file,'r');
+        ev = process.wrap(binding.readFile,file,'r');
         var buf = '';
         ev.on('data',function(data){
             buf += data;
