@@ -1,7 +1,6 @@
 package Pode;
 use strict;
 use warnings;
-use lib "e:/shell/lib";
 use JavaScript::Shell;
 use Data::Dumper;
 use File::Spec;
