@@ -92,7 +92,7 @@ sub close {
     my $self = shift;
     my $fd = shift->[0];
     my $fh = $self->{FH}->{$fd};
-    CORE::close $fh;
+    CORE::close $fh if $fh;
     delete $self->{FH}->{$fd};
     return 1;
 }
@@ -102,7 +102,6 @@ sub GET_OFFSET {
 }
 
 sub read {
-    
     my $self = shift;
     my $args = shift;
     my $fd = $args->[0];

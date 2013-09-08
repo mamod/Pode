@@ -1,6 +1,7 @@
 package Pode;
 use strict;
 use warnings;
+
 use JavaScript::Shell;
 use Data::Dumper;
 use File::Spec;
@@ -10,7 +11,7 @@ use FindBin qw($Bin);
 use Pode::Wrapper;
 my $MODELS = {};
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
     my $class = shift;
@@ -266,7 +267,7 @@ sub DESTROY {
         my %ev = Pode::Wrapper::_GET();
         map {
             my $e = $ev{$_};
-            $e->destroy();
+            $e->destroy() if $e;
         } keys %ev;
     } else {
         kill -9,$$;

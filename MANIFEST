@@ -1,11 +1,23 @@
 Changes
+examples/server.js
 lib/Pode.pm
+lib/Pode/bin/daemon.pl
+lib/Pode/bin/nohup.exe
+lib/Pode/Buffer.pm
 lib/Pode/Fs.pm
 lib/Pode/HTTP.pm
+lib/Pode/IP.pm
+lib/Pode/IPC.pm
 lib/Pode/NativeModules/_linklist.js
 lib/Pode/NativeModules/_rbtree.js
 lib/Pode/NativeModules/_treebase.js
 lib/Pode/NativeModules/assert.js
+lib/Pode/NativeModules/binary.js
+lib/Pode/NativeModules/buffer.js
+lib/Pode/NativeModules/child_process.js
+lib/Pode/NativeModules/coffee-script.js
+lib/Pode/NativeModules/colors.js
+lib/Pode/NativeModules/console.js
 lib/Pode/NativeModules/eval.js
 lib/Pode/NativeModules/events.js
 lib/Pode/NativeModules/fs.js
@@ -15,17 +27,27 @@ lib/Pode/NativeModules/path.js
 lib/Pode/NativeModules/pode.js
 lib/Pode/NativeModules/repl.js
 lib/Pode/NativeModules/require.js
+lib/Pode/NativeModules/stream.js
 lib/Pode/NativeModules/test.js
+lib/Pode/NativeModules/testUnit.js
 lib/Pode/NativeModules/timer_wrap.js
 lib/Pode/NativeModules/timers.js
 lib/Pode/NativeModules/util.js
 lib/Pode/NativeModules/vm.js
+lib/Pode/Open.pm
 lib/Pode/Repl.pm
+lib/Pode/Stream.pm
 lib/Pode/TTY.pm
 lib/Pode/Utils.pm
+lib/Pode/Wrapper.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 README
 script/pode
 t/Pode.t
+t/pode_all.t
+t/pode_buffer.t
+t/pode_fs.t
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
