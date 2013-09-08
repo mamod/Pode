@@ -15,8 +15,6 @@ sub Get {
     
 }
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-
 sub MIN {
     my $a = shift;
     my $b = shift;
