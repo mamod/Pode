@@ -1,6 +1,6 @@
 package Pode::IPC;
 use IPC::Open3;
-use Parallel::DataPipe;
+
 use Pode::Wrapper;
 use strict;
 use warnings;
