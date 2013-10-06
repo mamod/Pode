@@ -16,7 +16,7 @@ require('./errors');
 require('./events/all.js');
 
 //ipc
-require('./ipc/all.js');
+//require('./ipc/all.js');
 
 //moved to a seperate thread
 //buffer
